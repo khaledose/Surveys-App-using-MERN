@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/khaledose/Surveys-App-using-MERN#readme",
   "dependencies": {
+    "cookie-session": "^1.4.0",
     "express": "^4.17.1",
     "mongoose": "^5.11.8",
     "nodemon": "^2.0.6",

@@ -5,6 +5,16 @@ const keys = require("../config/keys");
 
 const User = mongoose.model("users");
 
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser((id, done) => {
+  User.findById(id).then((user) => {
+    done(null, user);
+  });
+});
+
 passport.use(
   new GoogleStrategy(
     {
@@ -13,12 +23,22 @@ passport.use(
       callbackURL: "/auth/google/callback",
     },
     (accessToken, refreshToken, profile, done) => {
-      new User({
-        googleID: profile.id,
-        email: profile.emails[0].value,
-        firstName: profile.name.givenName,
-        lastName: profile.name.familyName,
-      }).save();
+      User.findOne({ googleID: profile.id }).then((user) => {
+        if (user) {
+          done(null, user);
+        } else {
+          new User({
+            googleID: profile.id,
+            email: profile.emails[0].value,
+            firstName: profile.name.givenName,
+            lastName: profile.name.familyName,
+          })
+            .save()
+            .then((user) => {
+              done(null, user);
+            });
+        }
+      });
     }
   )
 );
