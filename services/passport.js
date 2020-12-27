@@ -1,10 +1,9 @@
 const passport = require("passport");
-const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const FacebookStrategy = require("passport-facebook").Strategy;
 const mongoose = require("mongoose");
-const keys = require("../config/keys");
-
 const User = mongoose.model("users");
+const googleAuth = require("./googleAuth");
+const facebookAuth = require("./facebookAuth");
+const twitterAuth = require("./twitterAuth");
 
 passport.serializeUser((user, done) => {
   done(null, user.id);
@@ -16,49 +15,8 @@ passport.deserializeUser((id, done) => {
   });
 });
 
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: keys.googleClientID,
-      clientSecret: keys.googleClientSecret,
-      callbackURL: "/auth/google/callback",
-      proxy: true,
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      const user = await User.findOne({ googleID: profile.id });
-      if (!user) {
-        user = await new User({
-          googleID: profile.id,
-          email: profile.emails[0].value,
-          firstName: profile.name.givenName,
-          lastName: profile.name.familyName,
-        }).save();
-      }
-      done(null, user);
-    }
-  )
-);
+passport.use(googleAuth);
 
-passport.use(
-  new FacebookStrategy(
-    {
-      clientID: keys.facebookClientID,
-      clientSecret: keys.facebookClientSecret,
-      callbackURL: "/auth/facebook/callback",
-      proxy: true,
-      profileFields: ["id", "emails", "name"],
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      const user = await User.findOne({ facebookID: profile.id });
-      if (!user) {
-        user = await new User({
-          facebookID: profile.id,
-          email: profile.emails[0].value,
-          firstName: profile.name.givenName,
-          lastName: profile.name.familyName,
-        }).save();
-      }
-      done(null, user);
-    }
-  )
-);
+passport.use(facebookAuth);
+
+passport.use(twitterAuth);
