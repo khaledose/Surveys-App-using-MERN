@@ -1,5 +1,6 @@
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const FacebookStrategy = require("passport-facebook").Strategy;
 const mongoose = require("mongoose");
 const keys = require("../config/keys");
 
@@ -23,23 +24,41 @@ passport.use(
       callbackURL: "/auth/google/callback",
       proxy: true,
     },
-    (accessToken, refreshToken, profile, done) => {
-      User.findOne({ googleID: profile.id }).then((user) => {
-        if (user) {
-          done(null, user);
-        } else {
-          new User({
-            googleID: profile.id,
-            email: profile.emails[0].value,
-            firstName: profile.name.givenName,
-            lastName: profile.name.familyName,
-          })
-            .save()
-            .then((user) => {
-              done(null, user);
-            });
-        }
-      });
+    async (accessToken, refreshToken, profile, done) => {
+      const user = await User.findOne({ googleID: profile.id });
+      if (!user) {
+        user = await new User({
+          googleID: profile.id,
+          email: profile.emails[0].value,
+          firstName: profile.name.givenName,
+          lastName: profile.name.familyName,
+        }).save();
+      }
+      done(null, user);
+    }
+  )
+);
+
+passport.use(
+  new FacebookStrategy(
+    {
+      clientID: keys.facebookClientID,
+      clientSecret: keys.facebookClientSecret,
+      callbackURL: "/auth/facebook/callback",
+      proxy: true,
+      profileFields: ["id", "emails", "name"],
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      const user = await User.findOne({ facebookID: profile.id });
+      if (!user) {
+        user = await new User({
+          facebookID: profile.id,
+          email: profile.emails[0].value,
+          firstName: profile.name.givenName,
+          lastName: profile.name.familyName,
+        }).save();
+      }
+      done(null, user);
     }
   )
 );
